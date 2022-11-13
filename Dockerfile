@@ -6,7 +6,7 @@ RUN	apk update \
 	&& apk upgrade \
 	&& apk add --no-progress --no-cache chromaprint openjdk11 openjdk11-jre zlib-dev libzen \
 	libzen-dev libmediainfo libmediainfo-dev \
-	&& mkdir -p /filebot /config/filebot/logs /downloads \
+	&& mkdir -p /filebot \
 	&& cd /filebot \
 	&& wget "https://get.filebot.net/filebot/FileBot_${FILEBOT_VER}/FileBot_${FILEBOT_VER}-portable.tar.xz" -O /filebot/filebot.tar.xz \
 	&& tar -xJf filebot.tar.xz \
@@ -20,35 +20,13 @@ RUN	apk update \
 # Make Filebot binary runable from everywhere:
 ENV PATH="/filebot:${PATH}"
 
-# Set the uid/gid:
-ENV PUID=99 \
-    PGID=100 \
-    WEBUI_PORT=
+# Env settings
+ENV WEBUI_PORT 9090 \
+	HOME /config  \
+	XDG_CONFIG_HOME /config \
+	XDG_DATA_HOME /config \
+	FILEBOT_HOME /config/filebot
 
-# Various:
-ENV FILES_CHECK_PERM=n
-
-# Define variables for Filebot:
-ENV FILEBOT_LANG=en \
-    FILEBOT_CONFLICT=auto \
-    FILEBOT_ACTION=copy \
-    FILEBOT_ARTWORK=y \
-    FILEBOT_PROCESS_MUSIC=y \
-    MUSIC_FORMAT={plex} \
-    MOVIE_FORMAT={plex} \
-    SERIE_FORMAT={plex} \
-    ANIME_FORMAT="animes/{n}/{e.pad(3)} - {t}" \
-    EXTRA_FILEBOT_PARAM=
-
-# environment settings
-ENV HOME="/data" \
-XDG_CONFIG_HOME="/data" \
-XDG_DATA_HOME="/data"
-
-
-# add local files
 COPY root/ /
-VOLUME ["/data"]
-VOLUME ["/downloads"]
-VOLUME ["/media"]
-EXPOSE 8080
+VOLUME /config
+EXPOSE 6881 6881/udp 9090
