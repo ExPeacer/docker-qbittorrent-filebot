@@ -1,13 +1,9 @@
 #!/usr/bin/with-contenv bash
 
-# Set the license:
-license=$(find /config/ -iname "*.psm" | head -n1)
-if ! [ -z "${license}" ];
-   then sh /filebot/filebot.sh --license=${license}
-else
-   echo -e "#####\n#\n#>> No license detected for FILEBOT.\n#>> Plz put you license psm file in /config/filebot folder\n#\n#\n#####"
-fi
+# Set FileBot env variables
 
+export "FILEBOT_OPTS=-Dapplication.deployment=docker -Dapplication.cache=/config/filebot/cache -Dapplication.dir=/config/filebot -Djava.io.tmpdir=/tmp/filebot -Dnet.filebot.archive.extractor=ShellExecutables -Dnet.filebot.license=/config/filebot/license.psm -Duser.home=/config/filebot"
+  
 # Fix some permissions:
 chown -R ${PUID}:${PGID} \
         /usr/local/bin \
