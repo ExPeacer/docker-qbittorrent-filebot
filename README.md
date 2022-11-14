@@ -10,13 +10,13 @@ For FileBot, please see https://www.filebot.net
 ### Bash
 
 ```sh
-docker run -d --name='qbittorrent-filebot' \
--e TZ="Europe/Budapest" \
+docker run -d --name=qbittorrent-filebot \
+-e TZ=Europe/Budapest \
 -e PUID=1000 -e PGID=1000 \
 -e WEBUI_PORT=8080 \
--p 8080:8080 -p 6881:6881 -p 6881:6881/udp
--v /mnt/media/:/media:rw \
--v /srv/qbittorrent-filebot/config:/config:rw \
+-p 8080:8080 -p 6881:6881 -p 6881:6881/udp \
+-v /mnt/media:/media \
+-v /srv/qbittorrent-filebot/config:/config \
 expeacer/qbittorrent-filebot
 ```
 
@@ -27,7 +27,6 @@ services:
   qbittorrent:
     container_name: qbittorrent-filebot
     environment:
-      - S6_SERVICES_GRACETIME=0
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Budapest
@@ -38,8 +37,8 @@ services:
       - 6881:6881/udp
     restart: unless-stopped
     volumes:
-      - /srv/qbittorrent-filebot/config
-      - /mnt/media/:/media:rw
+      - /srv/qbittorrent-filebot/config:/config
+      - /mnt/media:/media
       - type: tmpfs
         target: /tmp
     image: expeacer/qbittorrent-filebot
@@ -54,8 +53,8 @@ Container images are configured using parameters passed at runtime (such as thos
 | `-p 6881` | TCP connection port for qBt |
 | `-p 6881/udp` | UDP connection port for qBt |
 | `-p 8080` | HTTP GUI for qBt |
-| `-e PUID=1000` | for UserID - see below for explanation |
-| `-e PGID=1000` | for GroupID - see below for explanation |
+| `-e PUID=1000` | for UserID |
+| `-e PGID=1000` | for GroupID |
 | `-e TZ=Europe/Budapest` | Specify a timezone to use, ex. Europe/Budapest |
 | `-e WEBUI_PORT=8080` | for changing the port of the webui |
 | `-v /config` | Contains all relevant configuration files |
