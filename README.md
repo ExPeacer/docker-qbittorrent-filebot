@@ -1,61 +1,82 @@
 # docker-qbittorrent-filebot
-qbittorrent including Filebot tool
+Qbittorrent with FileBot tool
 
-For QBittorrent, I used [linuxserver/qbittorrent docker](https://hub.docker.com/r/linuxserver/qbittorrent).
+For qBittorrent, I used [linuxserver/qbittorrent docker](https://hub.docker.com/r/linuxserver/qbittorrent).
 
-For Filebot, please see https://www.filebot.net
+For FileBot, please see https://www.filebot.net
 
+## Usage example
 
-### You can set different variables:
+### Bash
 
-| Variable |  Default value |
-| -------- |  ------------- |
-| **FILEBOT_LANG** | en
-| **FILEBOT_ACTION** | copy
-| **FILEBOT_CONFLICT** | auto
-| **FILEBOT_ARTWORK** | yes
-| **MUSIC_FORMAT** | {plex}
-| **MOVIE_FORMAT** | {plex}
-| **SERIE_FORMAT** | {plex}
-| **ANIME_FORMAT** | animes/{n}/{e.pad(3)} - {t}
-| **PUID** | 99
-| **PGID** | 100
-| **FILES_CHECK_PERM** | no
-| **WEBUI** | 8080
-
-### Please READ:
-* Set your PUID and PGID according to your system ! I've set 99/100 because it's the default one on unRAID.
-* Be aware that {plex} movie format will put movies in Movies folder. Same for Tvshows ({plex} => "/TV Shows"), and for music ({plex} => "/Music"). So if it's not what you want, don't forget to adapt. I personnaly use "movies/{plex.tail}" etc...
-* Be carefull with FILES_CHECK_PERM. If you set to yes, it can take a long time to scan your media folder and then you will have to wait before you get the Qbt web interface.
-* FILEBOT_ACTION is set to copy by default, so it can take time/disk pace, especialy with big movies. You can change to move | symlink | hardlink | test. But if you set to 'move', you won't seed anymore. If you set to symlink, it doesn't work well with docker volume shares. Well, test what works best for you.
-* You can change the webport with the variable WEBUI_PORT. I personnaly use 80. (**But** don't forget port mapping if you use bridge network rather than a dedicated ip)
-* Don't forget to add your Filebot license file (psm file) into /data/filebot folder then restart
-* Qbt login/password is admin/adminadmin as usual.
-* If you want to customize the script that calls filebot (fb.sh) , set the variable custom=1 inside the script. So it won't be replaced anymore at restart. 
-
-### Volumes:
-
-- /data : folder for the config
-- /downloads : folder for downloads
-- /media : folder for media
-
-### Ports:
-
- - `8080` (WEBUI)
- - `6881` (PORT_RTORRENT)
-
-## Usage example (I like to set one ip per container, but it's up to you):
 ```sh
 docker run -d --name='qbittorrent-filebot' \
---net='br0' --ip='10.0.1.25' -e TZ="Europe/Paris" \
--e MOVIE_FORMAT='/media/movies/{plex.tail}' \
--e SERIE_FORMAT='/media/series/{plex[1]}/{'\''Season '\''+s}/{plex.name}' \
--e PUID=99 -e PGID=100 \
--e WEBUI_PORT=80 \
--v /mnt/user/media/:/media:rw \
--v /mnt/user/downloads/:/downloads:rw \
--v /mnt/user/appdata/qbittorrent-filebot/:/data:rw \
-imthai/qbittorrent-filebot
+-e TZ="Europe/Budapest" \
+-e PUID=1000 -e PGID=1000 \
+-e WEBUI_PORT=8080 \
+-p 8080:8080 -p 6881:6881 -p 6881:6881/udp
+-v /mnt/media/:/media:rw \
+-v /srv/qbittorrent-filebot/config:/config:rw \
+expeacer/qbittorrent-filebot
 ```
 
+### docker-compose
 
+```yaml
+services:
+  qbittorrent:
+    container_name: qbittorrent-filebot
+    environment:
+      - S6_SERVICES_GRACETIME=0
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Budapest
+      - WEBUI_PORT=8080
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+    volumes:
+      - /srv/qbittorrent-filebot/config
+      - /mnt/media/:/media:rw
+      - type: tmpfs
+        target: /tmp
+    image: expeacer/qbittorrent-filebot
+```
+
+## Parameters
+
+Container images are configured using parameters passed at runtime (such as those above). These parameters are separated by a colon and indicate `<external>:<internal>` respectively. For example, `-p 8080:80` would expose port `80` from inside the container to be accessible from the host's IP on port `8080` outside the container.
+
+| Parameter | Function |
+| :----: | --- |
+| `-p 6881` | TCP connection port for qBt |
+| `-p 6881/udp` | UDP connection port for qBt |
+| `-p 8080` | HTTP GUI for qBt |
+| `-e PUID=1000` | for UserID - see below for explanation |
+| `-e PGID=1000` | for GroupID - see below for explanation |
+| `-e TZ=Europe/Budapest` | Specify a timezone to use, ex. Europe/Budapest |
+| `-e WEBUI_PORT=8080` | for changing the port of the webui |
+| `-v /config` | Contains all relevant configuration files |
+| `-v /media` | Contains your media files |
+
+## Application Setup
+
+The qBt's Web-based interface is at `<your-ip>:8080` and the default username/password is `admin/adminadmin`.
+
+You can change username/password via the WebUI.
+
+### WEBUI_PORT variable
+
+Due to issues with CSRF and port mapping, should you require to alter the port for the webui you need to
+change both sides of the `-p 8080` switch AND set the `WEBUI_PORT` variable to the new port.
+
+For example, to set the port to 8090 you need to set `-p <external_port>:8090` and `-e WEBUI_PORT=8090`
+
+If you have no webui , check the file /config/qBittorrent/qBittorrent.conf and edit or add the following lines:
+
+```
+WebUI\Address=*
+WebUI\ServerDomains=*
+```
